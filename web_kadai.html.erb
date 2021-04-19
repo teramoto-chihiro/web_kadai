@@ -1,0 +1,63 @@
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  </head>
+  <body>
+    <h1>web技術入門課題</h1>
+    <% require 'pg' %>
+    <% connection = PG::connect(dbname: "goya") %>
+    <% connection.internal_encoding = "UTF-8" %>
+    <!-- pgライブラリをこのhtmlファイル内で使用できるようにし、その後connection変数にgoyaデータベースとの接続情報を入れています。 -->
+    <form action="indicate.cgi" method="POST">
+      <!-- test.html.erbに書かれている送信ボタンを押すと、form action='indicate.cgi'に処理が飛ぶ -->
+       下記に文字を入力してください<br><br>
+      <input type="text"  name="input" ><br>
+      <input type="submit" name="送信" >
+    </form>
+    <% result = connection.exec("select weight, give_for from crops;") %>
+    <% data = [] %>
+    <% result.each do |record| %>
+      <%  data << "ゴーヤの大きさ：#{record["weight"]}　売った相手：#{record["give_for"]}" %>
+    <% end %>
+    <!-- result変数にゴーヤの大きさと売った相手の情報のデータを入れ、それらの情報をeach文で一つずつdataと言う名前の配列に挿入しています-->
+    <form action="goya.cgi" method="POST">
+       下記のボタンを押すと、ゴーヤの大きさと売った相手の情報ページに飛びます<br><br>
+       <!-- valueには、送りたいデータを代入する -->
+       <!-- name="goya"を、情報の目印とする -->
+      <input type="text" name="goya" value="<%= data.join(' ') %>">
+      <input type="submit" name="送信" >
+    </form>
+    <!-- <give_for欄（譲渡先）自家消費以外を表示 %> -->
+    <% result = connection.exec("select give_for from crops WHERE NOT(give_for='自家消費');") %>
+    <% data = [] %>
+    <% result.each do |record| %>
+      <%  data << "売った相手：#{record["give_for"]}" %>
+    <% end %>
+    <!-- result変数にゴーヤの大きさと売った相手の情報のデータを入れ、それらの情報をeach文で一つずつdataと言う名前の配列に挿入しています-->
+    <form action="give_for.cgi" method="POST">
+       下記のボタンを押すと、譲渡先が自家消費ではないものの情報ページに飛びます<br><br>
+       <!-- valueには、送りたいデータを代入する -->
+       <!-- name="goya"を、情報の目印とする -->
+      <input type="text" name="give_for" value="<%= data.join(' ') %>">
+      <input type="submit" name="送信" >
+      </form>
+      <!-- <quality欄（品質）falseのみ表示 %> -->
+      <% result = connection.exec("select quality from crops WHERE NOT(quality=true);") %>
+      <% data = [] %>
+      <% result.each do |record| %>
+        <%  data << "品質：#{record["quality"]}" %>
+      <% end %>
+      <!-- result変数にゴーヤの大きさと売った相手の情報のデータを入れ、それらの情報をeach文で一つずつdataと言う名前の配列に挿入しています-->
+      <form action="quality.cgi" method="POST">
+         下記のボタンを押すと、品質が悪いものの情報ページに飛びます<br><br>
+         <!-- valueには、送りたいデータを代入する -->
+         <!-- name="goya"を、情報の目印とする -->
+        <input type="text" name="quality" value="<%= data.join(' ') %>">
+        <input type="submit" name="送信" >
+      </form>
+    <!-- ゴーヤ情報に飛ぶための別のformを作成し、送信ボタンとDBの値を入れ込みます。 -->
+<!-- input要素のvalueオプションに値をいれることで初期値を設定することができます。 -->
+<!-- data.join(' ')という記述で配列型であるdataの中に入っている複数の情報を文字列型に変換し、その結果をvalueに挿入しています。 -->
+<!-- これにより、複数のゴーヤの情報が初期値として設定され、レスポンスとして返されるという流れになります。 -->
+  </body>
+</html>
